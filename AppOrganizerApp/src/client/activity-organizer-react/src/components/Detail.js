@@ -1,10 +1,23 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import React, { useEffect, useState } from "react";
-import { getData } from "../testData";
-// import Errors from './Errors';
+import { useLocation, Link, useNavigate, useParams } from 'react-router-dom';
+import React, { useEffect, useState, useContext } from "react";
+import AuthContext from "../context/AuthContext"
+import Errors from './Errors';
+import Participants from "./Participants"
 
-export default function Detail() {
-    let activityData = getData();
+
+export default function Detail(props) {
+
+    //passing prop via state from View Link
+    // const stateLocation = useLocation();
+    // //const {from } = stateLocation.state;
+    // console.log(stateLocation);
+
+
+    const [activityData, setActivityDetails] = useState([]);
+    const [errors, setErrors] = useState([]);
+
+    const history = useNavigate();
+    const [userStatus, setUserStatus] = useContext(AuthContext);
 
     const [activityName, setActivityName] = useState('');
     const [description, setDescription] = useState('');
@@ -15,11 +28,248 @@ export default function Detail() {
     const [maxParticipant, setMaxParticipant] = useState('');
     const [minParticipant, setMinParticipant] = useState('');
     const [createBy, setCreateBy] = useState('');
+
     const { activityId } = useParams();
-    const history = useNavigate();
+ 
+    const activityNameOnChangeHandler = (event) => {
+        setActivityName(event.target.value);
+    };
+    const descriptionOnChangeHandler = (event) => {
+        setDescription(event.target.value);
+    };
 
-    console.log(activityData.activityName);
+    const locationOnChangeHandler = (event) => {
+        setLocation(event.target.value);
+    };
+    const dateOnChangeHandler = (event) => {
+        setDate(event.target.value);
+    };
+    const timeOnChangeHandler = (event) => {
+        setTime(event.target.value);
+    };
 
+    const maxParticipantOnChangeHandler = (event) => {
+        setMaxParticipant(parseInt(event.target.value));
+    };
+    const minParticipantOnChangeHandler = (event) => {
+        setMinParticipant(parseInt(event.target.value));
+    };
+    const createByOnChangeHandler = (event) => {
+        setCreateBy(event.target.value);
+    };
+
+    const formatDate=(date)=>{
+        if(date[1]<10){
+            date[1]='0'+date[1]
+        }
+        if(date[2]<10){
+            date[2]='0'+date[2]
+        }
+        return date.join("-");
+    }
+    const getActivityData = () => {
+        //fetch(`http://groopbackend.us-east-1.elasticbeanstalk.com/api/activity/${id}`)
+        fetch('http://groopbackend.us-east-1.elasticbeanstalk.com/api/activity/' + activityId)
+            .then(response => {
+                if (response.status === 404) {
+                    return Promise.reject(`Received 404 Not Found for Activity `);
+                }
+                return response.json();
+            })
+            .then(data => {
+                //  setActivityDetails(data);
+                setActivityName(data.activityName);
+                setDescription(data.description);
+                setLocation(data.location);
+                setDate(formatDate(data.date));
+                setTime(data.time);
+                setMaxParticipant(data.max);
+                setMinParticipant(data.min);
+                setUserId(data.userId);
+                setCreateBy(data.createBy);
+                console.log(data);
+                console.log(activityName);
+            })
+            .catch(error => {
+                console.log(error);
+            });
+    }
+
+    useEffect(() => {
+        getActivityData();
+    }, []);
+
+    // console.log(activityName);
+    //Include way to only edit/delete activity if the UserId matches the Activities Created User
+
+    const editActivitySubmitHandler = (event) => {
+        event.preventDefault();
+
+        const updatedDetail = {
+            activityId,
+            activityName,
+            description,
+            location,
+            date,
+            time,
+            'max':maxParticipant,
+            'min':minParticipant,
+            'userId':userStatus.user.userId,
+            createBy
+        };
+        const init = {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization":"Bearer "+localStorage.getItem("token")
+            },
+            body:JSON.stringify(updatedDetail)
+        };
+        //fetch(`http://groopbackend.us-east-1.elasticbeanstalk.com/api/activity/detail/${activityId}`, init)
+        fetch('http://groopbackend.us-east-1.elasticbeanstalk.com/api/activity/' + activityId, init)
+            .then(response => {
+                if (response.status === 204) {
+                    return null;
+                } else if (response.status === 400) {
+                    return response.json();
+                }
+                return Promise.reject('Something unexpected went wrong ');
+            })
+            .then(data => {
+                if (!data) {
+                    // redirect the user back to the /home route
+                    history('/');
+                } else {
+                    // we have errors to display
+                    // setErrors(data);
+                    console.log("This is where the errors would be!")
+                }
+            })
+            .catch(error => console.log(error));
+    };
+
+    const removeFromActivity = () => {
+
+        const init = {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization":"Bearer "+localStorage.getItem("token")
+            },
+        };
+        //fetch(`http://groopbackend.us-east-1.elasticbeanstalk.com/api/activity/detail/${activityId}`, init)
+        fetch('http://groopbackend.us-east-1.elasticbeanstalk.com/api/activity/user/'+userStatus.user.userId+"/" + activityId, init)
+            .then(response => {
+                if (response.status === 204) {
+                    history('/');
+                    return null;
+                } else if (response.status === 400) {
+                    return response.json();
+                }
+                return Promise.reject('Something unexpected went wrong ');
+            })
+            .catch(error => console.log(error));
+    };
+    return (
+        <>
+            
+            <div className="container">
+            <div className="row align-items-start">
+            <div className="col">
+            <form onSubmit={editActivitySubmitHandler}>
+                <div>
+                    <h2>Activity</h2>
+                    <div className="form-group">
+                        <label htmlFor="activityName">Activity Name</label>
+                        <input type="text" className="form-control" id="activityName" name="activityName"
+                            value={activityName} onChange={activityNameOnChangeHandler}
+                            readOnly={userId!==userStatus.user.userId}
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="description">Description</label>
+                        <input type="description" className="form-control" id="description" name="description"
+                            value={description} onChange={descriptionOnChangeHandler} readOnly={userId!==userStatus.user.userId}/>
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="location">Location of Activity</label>
+                        <input type="text" className="form-control" id="location" name="location"
+                            value={location} onChange={locationOnChangeHandler} readOnly={userId!==userStatus.user.userId}/>
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="date">Date</label>
+                        <input type="date" className="form-control" id="date" name="date"
+                            value={date} onChange={dateOnChangeHandler} readOnly={userId!==userStatus.user.userId}/>
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="time">Time</label>
+                        <input type="time" className="form-control" id="time" name="time"
+                            value={time} onChange={timeOnChangeHandler} readOnly={userId!==userStatus.user.userId}/>
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="maxParticipant">Max # of Participants</label>
+                        <input type="number" className="form-control" pattern="[0-9]*" id="maxParticipant"
+                            name="maxParticipant" min="2" max="50"
+                            value={maxParticipant} onChange={maxParticipantOnChangeHandler} readOnly={userId!==userStatus.user.userId}/>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="minParticipant">Min # of Participants</label>
+                        <input type="number" className="form-control" pattern="[0-9]*" id="minParticipant"
+                            name="minParticipant" min="2" max="50"
+                            value={minParticipant} onChange={minParticipantOnChangeHandler} readOnly={userId!==userStatus.user.userId}/>
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="createBy">Created By</label>
+                        <input type="text" className="form-control" id="createBy" name="createBy"
+                            value={createBy} onChange={createByOnChangeHandler} readOnly={userId!==userStatus.user.userId}/>
+                    </div>
+
+                    <div className="mt-5">
+                    {userId==userStatus.user.userId?(<><button className="btn btn-info" type="submit">
+                            <i className="bi bi-save"></i> Update Activity</button>
+                        <Link to={`/activity/delete/${activityId}`} className="btn btn-danger ml-2">
+                            <i className="bi bi-x"></i> Delete
+                        </Link></>):(<div className="btn btn-info" onClick={removeFromActivity}>
+                            <i className="bi bi-save"></i> Leave Activity </div>)}
+                        
+                        <Link to="/activity/browse" className="btn btn-warning ml-2">
+                            <i className="bi bi-x"></i> Return To List
+                        </Link>
+                    </div>
+                </div>
+            </form>
+            </div>
+            <div className="col">
+            <Participants activityId={activityId} isCreator={userId==userStatus.user.userId}/>
+            </div>
+            </div>
+            </div>
+        </>
+    );
+};
+
+
+
+/*
+
+
+       setActivityName(data.activityName);
+                setDescription(data.description);
+                setLocation(data.location);
+                setDate(data.data);
+                setTime(data.time);
+                setUserId(data.userId);
+                setMaxParticipant(data.maxParticipant);
+                setMinParticipant(data.minParticipant);
+                setCreateBy(data.createBy);  
+
+                
     const activityNameOnChangeHandler = (event) => {
         setActivityName(event.target.value);
     };
@@ -43,195 +293,5 @@ export default function Detail() {
     const minParticipantOnChangeHandler = (event) => {
         setMinParticipant(event.target.value);
     };
-
-    useEffect(() => {
-
-        fetch(`http://localhost:8080/activity/detail/${activityId}`)
-            // Response object
-            .then(response => {
-                if (response.status === 404) {
-                    return Promise.reject(`Received 404 Not Found for Agent ID: ${activityId}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                setActivityName(data.activityName);
-                setDescription(data.description);
-                setLocation(data.location);
-                setDate(data.data);
-                setTime(data.time);
-                setUserId(data.userId);
-                setMaxParticipant(data.maxParticipant);
-                setMinParticipant(data.minParticipant);
-                setCreateBy(data.createBy);
-            })
-            .catch(error => {
-                console.log(error);
-            });
-    }, [activityId]);
-
-
-    const editToDoFormSubmitHandler = (event) => {
-        event.preventDefault();
-
-        const updatedDetail = {
-            activityName,
-            description,
-            location,
-            date,
-            time,
-            userId,
-            maxParticipant,
-            minParticipant
-        };
-        const init = {
-            method: 'PUT',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(updatedDetail)
-        };
-        fetch(`http://localhost:8080/api/agent/${updatedDetail.userId}`, init)
-            .then(response => {
-                if (response.status === 204) {
-                    return null;
-                } else if (response.status === 400) {
-                    return response.json();
-                }
-                return Promise.reject('Something unexpected went wrong ');
-            })
-            .then(data => {
-                if (!data) {
-                    // redirect the user back to the /todos route
-                    history.push('/');
-                } else {
-                    // we have errors to display
-                    // setErrors(data);
-                    console.log("This is where the errors would be!")
-                }
-            })
-            .catch(error => console.log(error));
-    };
-
-    // <Errors errors={errors} />
-
-    return (
-        <>
-            <style>{"table{border:1px solid black;}"}
-            </style>
-            <div>
-                <h2 className="my-4">Activities</h2>
-                <table style={{ "borderWidth": "1px", 'borderColor': "#aaaaaa", 'borderStyle': 'solid' }}
-                    className="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Activity</th>
-                            <th>Location</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Owner</th>
-                            <th>Description</th>
-                            <th>Max Participants</th>
-                            <th>Min Participants</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {activityData.map(activity => (
-                            <tr key={activity.activityId}>
-                                <td>{activity.activityName}</td>
-                                <td>{activity.location}</td>
-                                <td>{activity.date}</td>
-                                <td>{activity.time}</td>
-                                <td>{activity.createBy}</td>
-                                <td>{activity.description}</td>
-                                <td>{activity.maxParticipant}</td>
-                                <td>{activity.minParticipant}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
-                <Link to={`/activity`} className="btn btn-success btn-sm">
-                    Return to List
-                </Link>
-            </div>
-        </>
-    );
-};
-
-
-
-/*
-
-
-    return (
-        <>
-            <h2 className="my-4">Edit Activity</h2>
-            <form onSubmit={editToDoFormSubmitHandler}>
-                <div>
-                    <label htmlFor="activityName">Activity Name</label>
-                    <input type="text" id="activityName" name="activityName"
-                        value={activityName} onChange={activityNameOnChangeHandler}
-                        placeholder={activityData.activityName}
-                    />
-                </div>
-
-                <div>
-                    <label htmlFor="description">Description</label>
-                    <input type="description" id="description" name="description"
-                        value={description} onChange={descriptionOnChangeHandler} />
-                </div>
-
-                <div>
-                    <label htmlFor="location">Location of Activity</label>
-                    <input type="text" id="location" name="location"
-                        value={location} onChange={locationOnChangeHandler} />
-                </div>
-
-                <div>
-                    <label htmlFor="date">Date</label>
-                    <input type="date" id="date" name="date"
-                        value={date} onChange={dateOnChangeHandler} />
-                </div>
-
-                <div>
-                    <label htmlFor="time">Time</label>
-                    <input type="time" id="time" name="time"
-                        value={time} onChange={timeOnChangeHandler} />
-                </div>
-
-                <div>
-                    <label htmlFor="maxParticipant">Max # of Participants</label>
-                    <input type="number" pattern="[0-9]*" id="maxParticipant"
-                        name="maxParticipant" min="6" max="50"
-                        value={maxParticipant} onChange={maxParticipantOnChangeHandler} />
-                </div>
-                <div>
-                    <label htmlFor="minParticipant">Min # of Participants</label>
-                    <input type="number" pattern="[0-9]*" id="minParticipant"
-                        name="minParticipant" min="3" max="45"
-                        value={minParticipant} onChange={minParticipantOnChangeHandler} />
-                </div>
-                <div className="mt-5">
-                    <button className="btn btn-info" type="submit">
-                        <i className="bi bi-save"></i> Update Activity</button>
-
-                    <Link to="/activity" className="btn btn-warning ml-2">
-                        <i className="bi bi-x"></i> Cancel
-                    </Link>
-
-                </div>
-            </form>
-        </>
-    );
-};
-
-
-     <div>
-                    <label htmlFor="createBy">Created By</label>
-                    <input type="text" id="createBy" name="createBy"
-                        value={createBy} />
-                </div>
 
 */

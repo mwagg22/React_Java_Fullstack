@@ -2,7 +2,6 @@ package learn.organizer.models;
 
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 
 public class Activity {
 
@@ -10,12 +9,16 @@ public class Activity {
     private String activityName;
     private String location;
     private LocalDate date;
-    private LocalTime time;
-    private int max;
-    private int min;
+    private String time;
+    private int maxParticipant;
+    private int minParticipant;
+
     private String createBy;
     private int userId;
+
     private String description;
+
+
 
     public int getActivityId() {
         return activityId;
@@ -49,28 +52,28 @@ public class Activity {
         this.date = date;
     }
 
-    public LocalTime getTime() {
+    public String getTime() {
         return time;
     }
 
-    public void setTime(LocalTime time) {
+    public void setTime(String time) {
         this.time = time;
     }
 
     public int getMax() {
-        return max;
+        return maxParticipant;
     }
 
-    public void setMax(int max) {
-        this.max = max;
+    public void setMax(int maxParticipant) {
+        this.maxParticipant = maxParticipant;
     }
 
     public int getMin() {
-        return min;
+        return minParticipant;
     }
 
-    public void setMin(int min) {
-        this.min = min;
+    public void setMin(int minParticipant) {
+        this.minParticipant = minParticipant;
     }
 
     public String getCreateBy() {
@@ -89,6 +92,7 @@ public class Activity {
         return userId;
     }
 
+
     public void setDescription(String description) {
         this.description=description;
     }
@@ -96,4 +100,21 @@ public class Activity {
     public String getDescription() {
         return description;
     }
+
+    @Override
+    public String toString() {
+        return "Activity{" +
+                "activityId=" + activityId +
+                ", activityName='" + activityName + '\'' +
+                ", location='" + location + '\'' +
+                ", date=" + date +
+                ", time='" + time + '\'' +
+                ", maxParticipant=" + maxParticipant +
+                ", minParticipant=" + minParticipant +
+                ", createBy='" + createBy + '\'' +
+                ", userId=" + userId +
+                ", description='" + description + '\'' +
+                '}';
+    }
+
 }

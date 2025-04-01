@@ -6,9 +6,17 @@ import java.util.List;
 
 public interface ActivityRepository {
 
-    public List<Activity> getAllActivities();
-    public boolean addActivity(Activity activity);
-    public boolean deleteActivity(int id);
-    public boolean editActivity(Activity activity);
+    List<Activity> getAllActivities();
 
+    List<Activity> findByAppUserId(int userId);
+
+    boolean addActivity(Activity activity);
+
+    boolean editActivity(Activity activity);
+
+    boolean deleteActivity(int activityId);
+
+    boolean deleteAllActivityFromUser(int userId);
+
+    Activity findActivityById(int activityId);
 }

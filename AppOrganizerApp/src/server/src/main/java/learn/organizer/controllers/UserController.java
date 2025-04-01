@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = {"http://localhost:3000"})
+@CrossOrigin(origins = {"http://localhost:3000","http://groop.us-east-1.elasticbeanstalk.com/"})
 @RequestMapping("/authenticate")
 public class UserController {
     // The `AuthenticationManager` interface defines a single method `authenticate()`

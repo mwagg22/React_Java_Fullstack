@@ -1,5 +1,9 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState, useContext } from 'react';
+import AuthContext from "../context/AuthContext";
+import Errors from './Errors';
+import './Styles/Form.css';
+import { store } from 'react-notifications-component';
 
 export default function Create() {
 
@@ -8,11 +12,12 @@ export default function Create() {
     const [location, setLocation] = useState('');
     const [date, setDate] = useState('');
     const [time, setTime] = useState('');
-    const [userId, setUserId] = useState('');
-    const [maxParticipant, setMaxParticipant] = useState('');
-    const [minParticipant, setMinParticipant] = useState('');
+    const [userId, setUserId] = useState(-1);
+    const [maxParticipant, setMaxParticipant] = useState(0);
+    const [minParticipant, setMinParticipant] = useState(0);
     const [createBy, setCreateBy] = useState('');
-    const { activityId } = useParams();
+    const [userStatus, setUserStatus] = useContext(AuthContext);
+
     const [errors, setErrors] = useState([]);
 
     const history = useNavigate();
@@ -33,12 +38,15 @@ export default function Create() {
     const timeOnChangeHandler = (event) => {
         setTime(event.target.value);
     };
+    const userIdHandler = (event) => {
+        setUserId(event.target.value);
+    };
 
     const maxParticipantOnChangeHandler = (event) => {
-        setMaxParticipant(event.target.value);
+        setMaxParticipant(parseInt(event.target.value));
     };
     const minParticipantOnChangeHandler = (event) => {
-        setMinParticipant(event.target.value);
+        setMinParticipant(parseInt(event.target.value));
     };
     const createByOnChangeHandler = (event) => {
         setCreateBy(event.target.value);
@@ -46,26 +54,31 @@ export default function Create() {
 
     const handleAddSubmit = (event) => {
         event.preventDefault();
-
+        //setUserId(userStatus.user.userId);
+        var id = userStatus.user.userId;
+        console.log(id);
         const newActivity = {
             activityName,
             description,
             location,
             date,
             time,
-            userId,
-            maxParticipant,
-            minParticipant
+            "max": maxParticipant,
+            "min": minParticipant,
+            createBy,
+            "userId": id
         };
         const init = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                "Authorization": "Bearer " + localStorage.getItem("token")
             },
+
             body: JSON.stringify(newActivity)
         };
 
-        fetch('http://localhost:8080/api/agent', init)
+        fetch('http://groopbackend.us-east-1.elasticbeanstalk.com/api/activity', init)
             .then(response => {
                 if (response.status === 201 || response.status === 400) {
                     return response.json();
@@ -74,78 +87,92 @@ export default function Create() {
             })
             .then(data => {
                 // we either created the recorded...
-                if (data.id) {
+                if (data.activityId) {
                     // redirect the user back to the home page
-                    history.push('/');
+                    store.addNotification({
+                        title: activityName +" created!",
+                        message: "Returning to Dashboard",
+                        type: "success",
+                        insert: "top",
+                        container: "top-right",
+                        animationIn: ["animate__animated", "animate__fadeIn"],
+                        animationOut: ["animate__animated", "animate__fadeOut"],
+                        dismiss: {
+                            duration: 2500,
+                            onScreen: true
+                        }
+                    });
+                    history('/');
                 } else {
                     // we have error messages
                     data = Array.from(data);
                     setErrors(data);
-                    history.push('/');
+                    history('/');
                 }
             })
             .catch(error => console.log(error));
     };
 
     return (
-        <>
-            <h2 className="my-4">Edit Activity</h2>
-            <form onSubmit={handleAddSubmit}>
+        <div className="container">
 
-                <div>
+            <Errors errors={errors} />
+            <h2 className="my-4">Create Activity</h2>
+            <form className="" onSubmit={handleAddSubmit}>
+
+                <div className="form-group">
                     <label htmlFor="activityName">Activity Name</label>
-                    <input type="text" id="activityName" name="activityName"
+                    <input type="text" className="form-control" id="activityName" name="activityName"
                         value={activityName} onChange={activityNameOnChangeHandler}
-                        placeholder={activityName}
                     />
                 </div>
 
-                <div>
+                <div className="form-group">
                     <label htmlFor="description">Description</label>
-                    <input type="description" id="description" name="description"
+                    <input type="description" className="form-control" id="description" name="description"
                         value={description} onChange={descriptionOnChangeHandler} />
                 </div>
 
-                <div>
+                <div className="form-group">
                     <label htmlFor="location">Location of Activity</label>
-                    <input type="text" id="location" name="location"
+                    <input type="text"  className="form-control" id="location" name="location"
                         value={location} onChange={locationOnChangeHandler} />
                 </div>
 
-                <div>
+                <div className="form-group">
                     <label htmlFor="date">Date</label>
-                    <input type="date" id="date" name="date"
+                    <input type="date" className="form-control" id="date" name="date"
                         value={date} onChange={dateOnChangeHandler} />
                 </div>
 
-                <div>
+                <div className="form-group">
                     <label htmlFor="time">Time</label>
-                    <input type="time" id="time" name="time"
+                    <input type="time" className="form-control" id="time" name="time"
                         value={time} onChange={timeOnChangeHandler} />
                 </div>
 
-                <div>
+                <div className="form-group">
                     <label htmlFor="maxParticipant">Max # of Participants</label>
-                    <input type="number" pattern="[0-9]*" id="maxParticipant"
-                        name="maxParticipant" min="6" max="50"
+                    <input type="number" className="form-control" pattern="[0-9]*" id="maxParticipant"
+                        name="maxParticipant" min="2" max="50"
                         value={maxParticipant} onChange={maxParticipantOnChangeHandler} />
                 </div>
-                <div>
+                <div className="form-group">
                     <label htmlFor="minParticipant">Min # of Participants</label>
-                    <input type="number" pattern="[0-9]*" id="minParticipant"
-                        name="minParticipant" min="3" max="45"
+                    <input type="number" className="form-control" pattern="[0-9]*" id="minParticipant"
+                        name="minParticipant" min="2" max="50"
                         value={minParticipant} onChange={minParticipantOnChangeHandler} />
                 </div>
 
-                <div>
+                <div className="form-group">
                     <label htmlFor="createBy">Created By</label>
-                    <input type="text" id="createBy" name="createBy"
+                    <input type="text"  className="form-control" id="createBy" name="createBy"
                         value={createBy} onChange={createByOnChangeHandler} />
                 </div>
 
                 <div className="mt-5">
                     <button className="btn btn-info" type="submit">
-                        <i className="bi bi-save"></i> Update Activity</button>
+                        <i className="bi bi-save"></i> Create Activity</button>
 
                     <Link to="/activity" className="btn btn-warning ml-2">
                         <i className="bi bi-x"></i> Cancel
@@ -153,6 +180,6 @@ export default function Create() {
 
                 </div>
             </form>
-        </>
+        </div>
     )
 };

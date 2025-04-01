@@ -1,0 +1,11 @@
+learn\organizer\data\ContactJdbcTemplateRepositoryTest.class
+learn\organizer\data\KnownGoodState.class
+learn\organizer\domain\ContactServiceTest.class
+learn\organizer\data\ActivityJdbcTemplateRepositoryTest.class
+learn\organizer\domain\ActivityServiceTest.class
+learn\organizer\data\UserActivityJdbcTemplateRepositoryTest.class
+learn\organizer\domain\UserServiceTest.class
+learn\organizer\data\PointsJdbcTemplateRepositoryTest.class
+learn\organizer\domain\PointsServiceTest.class
+learn\organizer\data\AppUserJdbcTemplateRepositoryTest.class
+learn\organizer\domain\UserActivityServiceTest.class

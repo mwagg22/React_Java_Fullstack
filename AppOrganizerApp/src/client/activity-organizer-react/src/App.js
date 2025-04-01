@@ -1,24 +1,96 @@
-import { Link } from "react-router-dom";
+import { render } from "react-dom";
+import React, { useState, useEffect } from 'react';
+import { HashRouter as Router, Routes, Route, Navigate  } from "react-router-dom";
+import './App.css';
+import './bootstrap.css';
+import Home from './components/Home';
+import Create from './components/Create';
+import Browse from './components/Browse';
+import Points from './components/Points';
+import Register from './components/Register';
+import Login from './components/Login';
+import Contact from './components/Contact';
+import Detail from './components/Detail';
+import TestApp from './TestApp';
+import Dashboard from './components/Dashboard';
+import NavBar from "./components/NavBar";
+import AuthContext from './context/AuthContext'
+import Delete from "./components/Delete";
+import Welcome from "./components/Welcome";
+import ReactNotification from 'react-notifications-component'
+import 'react-notifications-component/dist/theme.css'
 
-export default function App() {
+
+function App() {
+ 
+
+  const [token, setToken] = useState();
+  const [userIds, setUserId] = useState();
+
+  const [userStatus, setUserStatus] = useState({
+    user: null,
+    login(userDetail) {
+      // Use previous state to preserve login and logout methods when updating user
+      setUserStatus((prev) => ({ ...prev, user: userDetail }));
+      console.log(this.user);
+    },
+    logout() {
+      console.log("logged out");
+      // "token" must match the name used in "/Login" route
+      localStorage.removeItem("token");
+      setUserStatus((prev) => ({ ...prev, user: null }));
+    },
+  });
+
+  const addUserId = userId => {
+    setUserId([...userIds, userId])
+  }
+
   return (
-    <div>
-      <h1>Welcome to Groop Organizer!</h1>
-      <nav
-        style={{
-          borderBottom: "solid 1px",
-          paddingBottom: "1rem"
-        }}
-      >
-        <Link to="/activity">View Activities</Link> |{" "}
-        <Link to="/activity/browse">Browse Activities</Link> |{" "}
-        <Link to="/activity/create">Create An Activity</Link> |{" "}
-        <Link to="/activity/points">View Points</Link> |{" "}
-        <Link to="/home">About Us</Link> |{" "}
-        <Link to="/contact">Contact</Link>
-        <Link to="/test">Test</Link>
 
-      </nav>
+    <div className="wrapper">
+      <ReactNotification />
+      <Router>
+        <AuthContext.Provider value={[userStatus, setUserStatus]}>
+          <NavBar userStatus={userStatus} />
+          <Routes>
+            <Route path="/" element={ userStatus?.user ? (<Dashboard />):(<Welcome />)} />
+
+            <Route path="/home" element={<Home />} />
+            <Route path="/authenticate/register" element={<Register />} />
+
+            <Route path="/login" element=
+              {userStatus?.user ? (
+                <Navigate to="/" />
+              ) : (
+                <Login />
+              )}
+            />
+
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/dashboard" element={<Dashboard addUserId={addUserId} />}
+            />
+            
+            <Route path="/activity/browse" element={<Browse />} />
+            <Route path="/activity/create" element={<Create />} />
+            <Route path="/activity/points" element={<Points />} />
+            <Route path="/activity/detail/:activityId" element={<Detail />} />
+            <Route path="/activity/delete/:activityId" element={<Delete />} />
+
+            <Route path="/test" element={<TestApp />} />
+
+            <Route
+              path="*"
+              element={
+                <main style={{ padding: "1rem" }}>
+                  <p>There's nothing here!</p>
+                </main>}
+            />
+          </Routes>
+        </AuthContext.Provider>
+      </Router>
     </div>
+
   );
-}
+};
+export default App;
